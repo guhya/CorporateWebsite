@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="File">
+	
+    <insert id="insert" parameterType="com.project.corporatewebsite.vo.FileVo">
+    	INSERT INTO tbFile (
+			  channel
+			, category
+			, ownerSeq
+			, name
+			, originalName
+			, size
+			, path
+			, regIp
+			, regId
+			, regDate
+			, delYn
+		)
+		VALUES(
+			#{channel}
+			, #{category}
+			, #{ownerSeq}
+			, #{name}
+			, #{originalName}
+			, #{size}
+			, #{path}
+			, #{regIp}
+			, #{regId}
+			, NOW()
+			, 'N'
+		)    	
+    </insert>
+
+    <select id="selectById"	parameterType="com.project.corporatewebsite.vo.FileVo" resultType="hashmap">
+    	SELECT 
+			seq
+			, category
+			, channel
+			, ownerSeq
+			, name
+			, originalName
+			, size
+			, path
+			, regIp
+			, regId
+			, regDate
+			, modId
+			, modDate				
+		FROM tbFile 
+		WHERE seq = #{seq} AND delYn = 'N';  		         
+    </select>
+
+    <select id="selectByOwner"	parameterType="hashmap" resultType="string">
+    	SELECT
+			seq
+			, category
+			, channel
+			, ownerSeq
+			, name
+			, originalName
+			, size
+			, path
+			, regIp
+			, regId
+			, regDate
+			, modId
+			, modDate
+		FROM tbFile
+		WHERE channel = #{channel} AND ownerSeq = #{ownerSeq} AND delYn = 'N'
+		LIMIT 0, 1  		         
+    </select>
+    
+	<select id="list"	parameterType="hashmap" resultType="string">
+    	SELECT
+			seq
+			, category
+			, channel
+			, ownerSeq
+			, name
+			, originalName
+			, size
+			, path
+			, regIp
+			, regId
+			, regDate
+			, modId
+			, modDate
+		FROM tbFile
+		WHERE delYn = 'N'
+       	<if test="channel != '' and channel != null">
+      		AND channel = #{channel}
+       	</if>		
+       	<if test="category != '' and category != null">
+      		AND category = #{category}
+       	</if>		
+       	<if test="ownerSeq != '' and ownerSeq != null">
+      		AND ownerSeq = #{ownerSeq}
+       	</if>		
+    </select>    
+
+    <delete id="delete" parameterType="com.project.corporatewebsite.vo.FileVo">
+		UPDATE tbFile SET
+			delYn		= 'Y'
+			, modIp		= #{modIp}
+			, modId		= #{modId}
+			, modDate	= NOW()
+		WHERE seq 		= #{seq} AND ownerSeq = #{ownerSeq}        	
+    </delete>
+    
+</mapper>

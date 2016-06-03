@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+  xmlns:beans="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/security
+           http://www.springframework.org/schema/security/spring-security.xsd">
+           
+           
+	<global-method-security pre-post-annotations="enabled" />
+	           
+	<http use-expressions="true" disable-url-rewriting="true">
+		
+		<intercept-url pattern="/admin/login" 			access="permitAll"/>
+		<intercept-url pattern="/admin/**" 				access="hasRole('ROLE_ADMIN')" requires-channel="any"/>
+		
+		<form-login login-page="/admin/login" 
+					authentication-failure-url="/admin/login?error=1" 
+					authentication-success-handler-ref="authenticationSuccessHandler" 
+					/>
+		
+		<!-- Detect the submission of an invalid session ID, when timeout cookie need to be cleared explicitly -->
+		<session-management invalid-session-url="/">
+			<!-- Single login only -->
+			<concurrency-control max-sessions="1" />
+		</session-management>
+		
+		<!-- Cookie Only 
+		<remember-me key="project.corporatewebsite" user-service-ref="userDetailsServiceImplementation" />
+		-->				
+		<remember-me data-source-ref="dataSource" user-service-ref="userDetailsServiceImplementation" services-alias="rm" />				
+		
+		<!-- Logout config, explicitly delete the JSESSIONID cookie on logging out -->
+		<logout logout-url="/admin/logout" logout-success-url="/admin/login" delete-cookies="JSESSIONID"/>
+		
+				
+	</http>
+	
+	<beans:bean id="authenticationSuccessHandler" class="com.project.corporatewebsite.admin.misc.LoginSuccessHandler">
+		<!-- It's here instead of in (form-login) because we intentionally told spring to use handler after successful login -->
+		<beans:property name="defaultTargetUrl" value="/admin/dashboard"></beans:property>
+	</beans:bean>
+	<beans:bean id="authenticationFailureHandler" class="com.project.corporatewebsite.admin.misc.LoginFailureHandler" />
+	
+	<authentication-manager alias="authenticationManager">
+		
+		<!-- Dao Auth -->
+		<authentication-provider ref="daoAuthenticationProvider"/>	
+	
+	</authentication-manager>
+
+	<beans:bean id="encoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+	<beans:bean id="daoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="userDetailsServiceImplementation"></beans:property>
+		<beans:property name="passwordEncoder" ref="encoder"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="userDetailsServiceImplementation" class="com.project.corporatewebsite.admin.service.implementation.UserDetailsServiceImpl" />
+	
+	<!-- Persistent Remember Me Service -->
+	<beans:bean id="rememberMeAuthenticationProvider" class="org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices">
+	    <beans:property name="key" value="project.corporatewebsite" />
+	    <beans:property name="tokenRepository" ref="jdbcTokenRepository" />
+	    <beans:property name="userDetailsService" ref="userDetailsServiceImplementation" />
+	</beans:bean>
+	
+	<!-- Uses a database table to maintain a set of persistent login data -->
+	<beans:bean id="jdbcTokenRepository" class="org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl"> 
+	    <beans:property name="createTableOnStartup" value="false" /> 
+	    <beans:property name="dataSource" ref="dataSource" /> 
+	</beans:bean>	
+	
+</beans:beans>

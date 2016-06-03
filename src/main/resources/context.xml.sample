@@ -1,0 +1,14 @@
+<Context docBase="corporatewebsite" path="/" reloadable="true">
+	<Resource 
+		auth="Container" 
+		driverClassName="com.mysql.jdbc.Driver" 
+		maxActive="2" 
+		maxIdle="2" 
+		maxWait="30000" 
+		name="jdbc/mysql" 
+		password="password" 
+		type="javax.sql.DataSource" 
+		url="jdbc:mysql://localhost:3306/khcorporate?useEncoding=true&amp;characterEncoding=UTF-8&amp;autoReconnect=true" 
+		username="username"
+	/>	      	
+</Context>

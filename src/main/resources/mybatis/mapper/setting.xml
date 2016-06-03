@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Setting">
+	
+	<sql id="selectWhere">	
+       	WHERE a.delYn = 'N'
+       	<if test="searchCondition != null and searchKeyword != null">
+       		<if test="searchCondition == 'title'">
+       			AND a.title LIKE CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       	</if>
+       	<if test="startDate != ''">
+       		<![CDATA[
+      		AND a.startDate >= #{startDate} 
+      		]]>
+       	</if>
+       	<if test="endDate != ''">
+       		<![CDATA[
+      		AND a.endDate <= #{endDate} 
+      		]]>
+       	</if>
+	</sql>
+	
+	<sql id="selectOrder">	
+       	<if test="sortColumn != null and sortOrder != null">
+       		<if test="sortColumn == 'title'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.title ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.title DESC</if>
+       		</if>        		
+       		<if test="sortColumn == 'startDate'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.startDate ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.startDate DESC</if>
+       		</if>        		
+       		<if test="sortColumn == 'endDate'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.endDate ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.endDate DESC</if>
+       		</if>        		
+       	</if>
+       	<if test="sortColumn  == null or sortColumn == ''">
+       		ORDER BY a.seq DESC
+		</if>       	
+	</sql>
+
+
+    <select id="list" 	parameterType="com.project.corporatewebsite.vo.SettingVo" resultType="hashmap">
+        SELECT 
+			a.seq 
+			, a.title
+			, a.startDate
+			, a.endDate
+			, a.useYn
+			, a.defaultYn
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+			, b2.seq AS mainImageSeq
+			, b2.originalName AS mainImageOriginalName
+		FROM tbSetting a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'setting' AND b1.category = 'thumbnailImage' 
+			LEFT JOIN tbFile b2 ON a.seq = b2.ownerSeq AND b2.delYn = 'N' AND b2.channel = 'setting' AND b2.category = 'mainImage' 		
+        <include refid="selectWhere" />
+        <include refid="selectOrder" />
+        LIMIT #{startRow}, #{pageSize}
+    </select>
+    
+	<select id="countList" 	parameterType="com.project.corporatewebsite.vo.SettingVo" resultType="int">
+        SELECT COUNT(a.seq) FROM tbSetting a        
+    </select>    
+
+    <insert id="insert" parameterType="com.project.corporatewebsite.vo.SettingVo">
+    	INSERT INTO tbSetting(
+    		title 
+			, startDate
+			, endDate
+    		, regId
+    		, regIp 
+    		, regDate
+    		, delYn
+    		, useYn
+    		, defaultYn
+    	)
+    	VALUE(
+    		#{title}
+    		, #{startDate}
+    		, #{endDate}
+    		, #{regId}
+    		, #{regIp}
+    		, NOW()
+    		, 'N'
+    		, 'N'
+    		, #{defaultYn}
+    	)
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+
+    <update id="update" parameterType="com.project.corporatewebsite.vo.SettingVo">
+    	UPDATE tbSetting SET
+    		title 		= #{title} 
+    		, startDate = #{startDate}
+    		, endDate 	= #{endDate}
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE seq = #{seq} 
+    		
+    </update>
+    
+    <select id="select"	parameterType="com.project.corporatewebsite.vo.SettingVo" resultType="hashmap">
+    	SELECT
+			a.seq
+			, a.title
+			, a.startDate
+			, a.endDate
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+			, a.useYn
+			, a.defaultYn
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+			, b2.seq AS mainImageSeq
+			, b2.originalName AS mainImageOriginalName
+		FROM tbSetting a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'setting' AND b1.category = 'thumbnailImage' 
+			LEFT JOIN tbFile b2 ON a.seq = b2.ownerSeq AND b2.delYn = 'N' AND b2.channel = 'setting' AND b2.category = 'mainImage' 
+		WHERE a.seq = #{seq} AND a.delYn = 'N'  		         
+    </select>
+
+    <update id="delete" parameterType="com.project.corporatewebsite.vo.SettingVo">    	
+		UPDATE tbSetting SET 
+    		delYn 		= 'Y'
+    		, useYn 	= 'N'
+    		, defaultYn = 'N'
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE seq = #{seq} 
+   	</update>
+   	
+    <select id="selectDefaultEvent"	parameterType="com.project.corporatewebsite.vo.SettingVo" resultType="hashmap">
+    	SELECT
+			a.seq
+			, a.title
+			, a.startDate
+			, a.endDate
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+			, a.useYn
+			, a.defaultYn
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+			, b2.seq AS mainImageSeq
+			, b2.originalName AS mainImageOriginalName
+		FROM tbSetting a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'setting' AND b1.category = 'thumbnailImage' 
+			LEFT JOIN tbFile b2 ON a.seq = b2.ownerSeq AND b2.delYn = 'N' AND b2.channel = 'setting' AND b2.category = 'mainImage' 
+		WHERE a.delYn = 'N' AND a.defaultYn = 'Y'
+		LIMIT 0, 1  		         
+    </select>
+    
+    <select id="selectCurrentEvent"	parameterType="com.project.corporatewebsite.vo.SettingVo" resultType="hashmap">
+    	SELECT
+			a.seq
+			, a.title
+			, a.startDate
+			, a.endDate
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+			, a.useYn
+			, a.defaultYn
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+			, b2.seq AS mainImageSeq
+			, b2.originalName AS mainImageOriginalName
+		FROM tbSetting a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'setting' AND b1.category = 'thumbnailImage' 
+			LEFT JOIN tbFile b2 ON a.seq = b2.ownerSeq AND b2.delYn = 'N' AND b2.channel = 'setting' AND b2.category = 'mainImage' 
+		WHERE a.delYn = 'N' AND NOW() BETWEEN a.startDate AND a.endDate AND (a.defaultYn != 'Y' OR a.defaultYn IS NULL)
+		LIMIT 0, 1  		         
+    </select>    
+    
+    <select id="selectManualEvent"	parameterType="com.project.corporatewebsite.vo.SettingVo" resultType="hashmap">
+    	SELECT
+			a.seq
+			, a.title
+			, a.startDate
+			, a.endDate
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+			, a.useYn
+			, a.defaultYn
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+			, b2.seq AS mainImageSeq
+			, b2.originalName AS mainImageOriginalName
+		FROM tbSetting a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'setting' AND b1.category = 'thumbnailImage' 
+			LEFT JOIN tbFile b2 ON a.seq = b2.ownerSeq AND b2.delYn = 'N' AND b2.channel = 'setting' AND b2.category = 'mainImage' 
+		WHERE a.delYn = 'N' AND useYn = 'Y'
+		LIMIT 0, 1  		         
+    </select>        
+    <update id="clearEvent" parameterType="com.project.corporatewebsite.vo.SettingVo">    	
+		UPDATE tbSetting SET 
+    		useYn 		= 'N'
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE 1=1
+   	</update>
+    
+    <update id="setAsEvent" parameterType="com.project.corporatewebsite.vo.SettingVo">    	
+		UPDATE tbSetting SET 
+    		useYn 		= 'Y'
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE seq = #{seq} 
+   	</update>
+   	
+    <update id="setAsDefault" parameterType="com.project.corporatewebsite.vo.SettingVo">    	
+		UPDATE tbSetting SET 
+    		defaultYn 	= 'Y'
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE seq = #{seq} 
+   	</update>
+    
+    <update id="unsetDefault" parameterType="com.project.corporatewebsite.vo.SettingVo">    	
+		UPDATE tbSetting SET 
+    		defaultYn 	= 'N'
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE seq = #{seq} 
+   	</update>
+    
+</mapper>

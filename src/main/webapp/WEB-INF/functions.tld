@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<taglib 
+    xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
+    version="2.1">
+
+    <display-name>Custom Functions</display-name>    
+    <tlib-version>1.0</tlib-version>
+    <short-name>ew</short-name>
+    <uri>http://ewideplus.com</uri>
+
+    <function>
+        <name>stripTags</name>
+        <function-class>com.project.corporatewebsite.common.Util</function-class>
+        <function-signature>java.lang.String stripTags(java.lang.String)</function-signature>
+    </function>
+    
+    <function>
+        <name>stringCut</name>
+        <function-class>com.project.corporatewebsite.common.Util</function-class>
+        <function-signature>java.lang.String stringCut(java.lang.String, int)</function-signature>
+    </function>
+    
+    <function>
+        <name>formatDate</name>
+        <function-class>com.project.corporatewebsite.common.Util</function-class>
+        <function-signature>java.lang.String formatDate(java.lang.String, java.lang.String)</function-signature>
+    </function>
+</taglib>

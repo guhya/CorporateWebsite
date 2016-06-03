@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="User">
+	
+	<sql id="selectWhere">	
+       	WHERE delYn = 'N'
+       	<if test="searchCondition != null and searchKeyword != null">
+       		<if test="searchCondition == 'username'">
+       			AND username like CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       		<if test="searchCondition == 'firstName'">
+       			AND firstName like  CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       	</if>
+	</sql>
+
+    <select id="list" 	parameterType="com.project.corporatewebsite.vo.UserVo" resultType="hashmap">
+        SELECT 
+			a.seq, 
+			a.username,
+			a.password,
+			a.firstName,
+			a.lastName
+		FROM tbUser a
+        <include refid="selectWhere" />
+        ORDER BY
+        	a.seq DESC
+        LIMIT #{startRow}, #{pageSize}
+    </select>
+    
+	<select id="countList" 	parameterType="com.project.corporatewebsite.vo.UserVo" resultType="int">
+        SELECT COUNT(seq) FROM tbUser        
+        <include refid="selectWhere" />
+    </select>    
+
+    <insert id="insert" parameterType="com.project.corporatewebsite.vo.UserVo">
+    	INSERT INTO tbUser(
+    		username 
+    		, password 
+    		, firstName 
+    		, lastName 
+    		, enabled 
+    		, regId
+    		, regIp 
+    		, regDate
+    		, delYn
+    	)
+    	VALUE(
+    		#{username}
+    		, #{password}
+    		, #{firstName}
+    		, #{lastName}
+    		, 'N'
+    		, #{regId}
+    		, #{regIp}
+    		, NOW()
+    		, 'N'
+    	)
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+
+    <update id="update" parameterType="com.project.corporatewebsite.vo.UserVo">
+    	UPDATE tbUser SET 
+    		firstName = #{firstName}
+    		, lastName = #{lastName}
+    		, password = #{password}
+    		, email = #{email}
+    		, modId = #{modId}
+    		, modIp	= #{modIp}
+    		, modDate = NOW()
+    	WHERE username = #{username} 
+    		
+    </update>
+    
+    <select id="select"	parameterType="com.project.corporatewebsite.vo.UserVo" resultType="hashmap">
+    	SELECT 
+    		a.seq
+			, a.username
+			, a.password
+			, a.firstName
+			, a.lastName
+			, a.email
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+		FROM tbUser a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'user' AND b1.category = 'thumbnailImage'
+    	WHERE a.delYn = 'N' AND a.username = #{username} LIMIT 1  		         
+    </select>
+
+    <insert id="insertRole" parameterType="com.project.corporatewebsite.vo.UserVo">
+    	INSERT INTO tbUserRole(
+    		username 
+    		, role
+    		, regId
+    		, regIp 
+    		, regDate
+    		, delYn
+    	)
+    	VALUE(
+    		#{username}
+    		, #{role}
+    		, #{regId}
+    		, #{regIp}
+    		, NOW()
+    		, 'N'
+    	)    	
+    </insert>
+
+    <select id="listUserRoles"	parameterType="com.project.corporatewebsite.vo.UserVo" resultType="string">
+    	SELECT 
+    		role 
+    	FROM tbUserRole
+    	WHERE delYn = 'N'
+    		AND username = #{username}  		         
+    </select>
+
+    <update id="delete" parameterType="com.project.corporatewebsite.vo.UserVo">    	
+		UPDATE tbUser SET 
+    		delYn = 'Y'
+    		, modId = #{modId}
+    		, modIp	= #{modIp}
+    		, modDate = NOW()
+    	WHERE username = #{username} 
+   	</update>
+    
+</mapper>

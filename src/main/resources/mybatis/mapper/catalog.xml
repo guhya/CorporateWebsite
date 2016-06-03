@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Catalog">
+	
+	<sql id="selectWhere">	
+       	WHERE a.delYn = 'N'
+       	<if test="searchCondition != null and searchKeyword != null">
+       		<if test="searchCondition == 'name'">
+       			AND a.name LIKE CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       		<if test="searchCondition == 'description'">
+       			AND a.description LIKE  CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       	</if>
+       	<if test="category != '' and category != null">
+      		AND b1.lineage LIKE CONCAT('%',LPAD(#{category}, 4, '0'),'%')
+       	</if>
+	</sql>
+	
+	<sql id="selectOrder">	
+       	<if test="sortColumn != null and sortOrder != null">
+       		<if test="sortColumn == 'name'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.name ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.name DESC</if>
+       		</if>        		
+       		<if test="sortColumn == 'regDate'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.regDate ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.regDate DESC</if>
+       		</if>        		
+       	</if>
+       	<if test="sortColumn  == null or sortColumn == ''">
+       		ORDER BY a.seq DESC
+		</if>       	
+	</sql>
+
+    <select id="list" 	parameterType="com.project.corporatewebsite.vo.CatalogVo" resultType="hashmap">
+        SELECT 
+			a.seq, 
+			a.name,
+			a.description,
+			a.regDate,
+			b.seq AS categorySeq,
+			b1.name AS category
+		FROM tbCatalog a 
+		LEFT JOIN tbTermRelationship b INNER JOIN tbTerm b1
+			ON b.termSeq = b1.seq ON a.seq = b.ownerSeq AND b.delYn = 'N' AND b1.delYn = 'N' AND b.taxonomy = 'cat' AND b.channel='catalog'
+        <include refid="selectWhere" />
+        <include refid="selectOrder" />
+        LIMIT #{startRow}, #{pageSize}
+    </select>
+    
+	<select id="countList" 	parameterType="com.project.corporatewebsite.vo.CatalogVo" resultType="int">
+        SELECT 
+        	COUNT(a.seq) FROM tbCatalog a        
+		LEFT JOIN tbTermRelationship b INNER JOIN tbTerm b1
+			ON b.termSeq = b1.seq ON a.seq = b.ownerSeq AND b.delYn = 'N' AND b1.delYn = 'N' AND b.taxonomy = 'cat' AND b.channel='catalog'
+		<include refid="selectWhere" />
+    </select>    
+
+    <insert id="insert" parameterType="com.project.corporatewebsite.vo.CatalogVo">
+    	INSERT INTO tbCatalog(
+    		name 
+    		, description
+    		, viewCount 
+    		, regId
+    		, regIp 
+    		, regDate
+    		, delYn
+    	)
+    	VALUE(
+    		#{name}
+    		, #{description}
+    		, 0
+    		, #{regId}
+    		, #{regIp}
+    		, NOW()
+    		, 'N'
+    	)
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+
+    <update id="update" parameterType="com.project.corporatewebsite.vo.CatalogVo">
+    	UPDATE tbCatalog SET
+    		name 		= #{name} 
+    		, description 	= #{description}
+    		, modId 	= #{modId}
+    		, modIp		= #{modIp}
+    		, modDate 	= NOW()
+    	WHERE seq = #{seq} 
+    		
+    </update>
+    
+    <select id="select"	parameterType="com.project.corporatewebsite.vo.CatalogVo" resultType="hashmap">
+    	SELECT
+			a.seq
+			, a.name
+			, a.description
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+			, b1.seq AS thumbnailImageSeq
+			, b1.originalName AS thumbnailImageOriginalName
+			, b2.seq AS mainImageSeq
+			, b2.originalName AS mainImageOriginalName
+			, b7.seq AS attachmentSeq
+			, b7.originalName AS attachmentOriginalName
+			, c1a.seq AS category
+			, c1a.name AS categoryName
+		FROM tbCatalog a
+			LEFT JOIN tbFile b1 ON a.seq = b1.ownerSeq AND b1.delYn = 'N' AND b1.channel = 'catalog' AND b1.category = 'thumbnailImage' 
+			LEFT JOIN tbFile b2 ON a.seq = b2.ownerSeq AND b2.delYn = 'N' AND b2.channel = 'catalog' AND b2.category = 'mainImage' 
+			LEFT JOIN tbFile b7 ON a.seq = b7.ownerSeq AND b7.delYn = 'N' AND b7.channel = 'catalog' AND b7.category = 'attachment' 
+			LEFT JOIN tbTermRelationship c1 INNER JOIN tbTerm c1a 
+				ON c1.termSeq = c1a.seq ON a.seq = c1.ownerSeq AND c1.delYn = 'N' AND c1a.delYn = 'N' AND c1.taxonomy = 'cat' AND c1.channel = 'catalog' 
+		WHERE a.seq = #{seq} AND a.delYn = 'N'  		         
+    </select>
+
+    <update id="delete" parameterType="com.project.corporatewebsite.vo.CatalogVo">    	
+		UPDATE tbCatalog SET 
+    		delYn = 'Y'
+    		, modId = #{modId}
+    		, modIp	= #{modIp}
+    		, modDate = NOW()
+    	WHERE seq = #{seq} 
+   	</update>
+    
+</mapper>

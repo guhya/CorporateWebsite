@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Term">
+	
+	<sql id="selectWhere">	
+       	WHERE a.delYn = 'N'
+       	<if test="searchCondition != null and searchKeyword != null">
+       		<if test="searchCondition == 'name'">
+       			AND a.name like CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       		<if test="searchCondition == 'description'">
+       			AND a.description like  CONCAT('%',#{searchKeyword},'%')
+       		</if>        		
+       	</if>
+       	<if test="lineage != null and lineage != ''">
+      		AND a.lineage LIKE CONCAT('%',LPAD(#{lineage}, 4, '0'),'%')
+       	</if>
+       	<if test="taxonomy != null and taxonomy != ''">
+      		AND a.taxonomy = #{taxonomy}
+       	</if>
+	</sql>
+
+	<sql id="selectOrder">	
+       	<if test="sortColumn != null and sortOrder != null">
+       		<if test="sortColumn == 'name'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.name ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.name DESC</if>
+       		</if>        		
+       		<if test="sortColumn == 'regDate'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.regDate ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.regDate DESC</if>
+       		</if>        		
+       		<if test="sortColumn == 'lineage'">
+       			<if test="sortOrder == 'ASC'">ORDER BY a.lineage ASC</if>
+       			<if test="sortOrder == 'DESC'">ORDER BY a.lineage DESC</if>
+       		</if>        		
+       	</if>
+       	<if test="sortColumn  == null or sortColumn == ''">
+       		ORDER BY a.seq DESC
+		</if>       	
+	</sql>
+	
+    <select id="list" 	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="hashmap">
+        SELECT 
+			a.seq, 
+			a.name,
+			a.description,
+			a.taxonomy,
+			a.lineage,
+			a.regDate,
+			a.fixYn
+		FROM tbTerm a
+        <include refid="selectWhere" />
+        <include refid="selectOrder" />
+        LIMIT #{startRow}, #{pageSize}
+    </select>
+    
+	<select id="countList" 	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="int">
+        SELECT COUNT(seq) FROM tbTerm a        
+        <include refid="selectWhere" />
+    </select>    
+
+    <insert id="insert" parameterType="com.project.corporatewebsite.vo.TermVo">
+    	INSERT INTO tbTerm(
+			name
+			, description
+			, taxonomy
+			, parent
+			, regIp
+			, regId
+			, regDate
+			, delYn
+		)
+		VALUES(
+			#{name}
+			, #{description}
+			, #{taxonomy}
+			, #{parent}
+			, #{regIp}
+			, #{regId}
+			, NOW()
+			, 'N'
+		)
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+
+	<insert id="insertParentCategory" parameterType="com.project.corporatewebsite.vo.TermVo">
+    	INSERT INTO tbTerm(
+			name
+			, description
+			, taxonomy
+			, parent
+			, regIp
+			, regId
+			, regDate
+			, delYn
+		)
+		VALUES(
+			#{name}
+			, #{description}
+			, #{taxonomy}
+			, 0
+			, #{regIp}
+			, #{regId}
+			, NOW()
+			, 'N'
+		);		
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+    <update id="insertParentCategoryUpdate" parameterType="com.project.corporatewebsite.vo.TermVo">
+		UPDATE tbTerm SET 
+			lineage = CONCAT(LPAD(#{seq}, 4, '0'), '/') 
+		WHERE seq = #{seq};    
+	</update>
+    
+    <update id="insertChildCategoryUpdate" parameterType="com.project.corporatewebsite.vo.TermVo">
+		UPDATE tbTerm SET 
+			lineage = CONCAT((SELECT lineage FROM (SELECT lineage FROM tbTerm a WHERE a.seq = #{parent}) AS x), LPAD(#{seq}, 4, '0'), '/') 
+		WHERE seq = #{seq};
+	</update>
+    
+    <insert id="insertChildCategory" parameterType="com.project.corporatewebsite.vo.TermVo">
+    	INSERT INTO tbTerm(
+			name
+			, description
+			, taxonomy
+			, parent
+			, regIp
+			, regId
+			, regDate
+			, delYn
+		)
+		VALUES(
+			#{name}
+			, #{description}
+			, #{taxonomy}
+			, #{parent}
+			, #{regIp}
+			, #{regId}
+			, NOW()
+			, 'N'
+		);		
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+    
+    <update id="update" parameterType="com.project.corporatewebsite.vo.TermVo">
+    	UPDATE tbTerm SET
+			name			= #{name}
+			, description	= #{description}
+			, modIp			= #{modIp}
+			, modId			= #{modId}
+			, modDate		= NOW()
+		WHERE seq 			= #{seq}    		
+    </update>
+    
+    <select id="select"	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="hashmap">
+    	SELECT
+			a.seq
+			, a.name
+			, a.description
+			, a.taxonomy
+			, a.parent
+			, a.lineage
+			, a.fixYn
+			, a.regIp
+			, a.regId
+			, a.regDate
+			, a.modIp
+			, a.modId
+			, a.modDate
+		FROM tbTerm a
+		WHERE a.seq = #{seq} AND a.delYn = 'N'  		         
+    </select>
+
+    <update id="delete" parameterType="com.project.corporatewebsite.vo.TermVo">    	
+		UPDATE tbTerm SET
+			delYn			= 'Y'
+			, modIp			= #{modIp}
+			, modId			= #{modId}
+			, modDate		= NOW()
+		WHERE lineage LIKE #{lineage}
+   	</update>
+
+    <update id="deleteBySeq" parameterType="com.project.corporatewebsite.vo.TermVo">    	
+		UPDATE tbTerm SET
+			delYn			= 'Y'
+			, modIp			= #{modIp}
+			, modId			= #{modId}
+			, modDate		= NOW()
+		WHERE seq LIKE #{seq}
+   	</update>
+   	
+    <select id="selectTags" 	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="hashmap">
+        SELECT seq, name FROM tbTerm WHERE delYn = 'N' AND taxonomy = 'tag' ORDER BY name ASC
+    </select>  
+
+    <select id="selectCategories" 	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="hashmap">
+        SELECT 
+			*,
+			REPEAT('-', CAST((LENGTH(lineage)/5) AS UNSIGNED)*5) as padding
+		FROM tbTerm 
+		WHERE delYn = 'N' AND taxonomy = 'cat'
+		ORDER BY lineage ASC
+    </select>      
+    
+	<select id="selectCategoriesByParent" 	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="hashmap">
+        SELECT 
+			*,
+			REPEAT('-', CAST((LENGTH(lineage)/5) AS UNSIGNED)) as padding
+		FROM tbTerm 
+		WHERE delYn = 'N' AND taxonomy = 'cat' AND lineage LIKE CONCAT(LPAD('#{seq}', 4, '0'), '/%')  
+		ORDER BY lineage ASC
+    </select>   	
+    
+    <select id="getFullPath" 	parameterType="com.project.corporatewebsite.vo.TermVo" resultType="hashmap">
+        SELECT b.seq, b.name FROM tbTerm b WHERE LOCATE(b.seq, (SELECT a.lineage FROM tbTerm	a WHERE a.seq=#{seq})) > 0 ORDER BY b.seq ASC
+    </select>
+</mapper>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="TermRelationship">
+	
+    <insert id="insert" parameterType="com.project.corporatewebsite.vo.TermRelationshipVo">
+    	INSERT INTO tbTermRelationship (
+			  channel
+			, ownerSeq
+			, termSeq
+			, taxonomy
+			, regIp
+			, regId
+			, regDate
+			, delYn
+		)
+		VALUES(
+			#{channel}
+			, #{ownerSeq}
+			, #{termSeq}
+			, #{taxonomy}
+			, #{regIp}
+			, #{regId}
+			, NOW()
+			, 'N'
+		)
+		<selectKey resultType="string" order="AFTER" keyProperty="seq">
+	        SELECT LAST_INSERT_ID() AS seq
+	    </selectKey>    	    	
+    </insert>
+
+    <update id="delete" parameterType="com.project.corporatewebsite.vo.TermRelationshipVo">    	
+		UPDATE tbTermRelationship SET
+			delYn			= 'Y'
+			, modIp			= #{modIp}
+			, modId			= #{modId}
+			, modDate		= NOW()
+		WHERE ownerSeq = #{ownerSeq} AND channel = #{channel} AND taxonomy = #{taxonomy}
+   	</update>
+   	
+   <select id="selectBySeq" 	parameterType="com.project.corporatewebsite.vo.TermRelationshipVo" resultType="hashmap">
+        SELECT 
+			seq
+			, channel
+			, ownerSeq
+			, termSeq
+			, regIp
+			, regId
+			, regDate
+			, modId
+			, modDate				
+		FROM tbTermRelationship 
+		WHERE seq = #{seq} AND delYn = 'N'
+    </select>      
+    
+	<select id="selectByOwner" 	parameterType="com.project.corporatewebsite.vo.TermRelationshipVo" resultType="hashmap">
+        SELECT
+			a.termSeq as seq
+			, b.name
+		FROM tbTermRelationship a INNER JOIN tbTerm b ON a.termSeq = b.seq AND b.delYn = 'N'
+		WHERE a.taxonomy = #{taxonomy} AND a.channel = #{channel} AND a.ownerSeq = #{ownerSeq} AND a.delYn = 'N'  
+		ORDER BY b.name ASC
+    </select>   	
+    
+</mapper>
